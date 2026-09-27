@@ -89,10 +89,10 @@ app.set(
     "views",
     path.join(
         process.cwd(),
+        "backend",
         "views"
     )
 );
-
 
 // =========================
 // AUTH / PAGES
