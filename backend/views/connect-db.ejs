@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Connect Database - QueryAI</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 30px;
+
+            background:
+                radial-gradient(
+                    circle at top left,
+                    #312e81 0%,
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at bottom right,
+                    #4c1d95 0%,
+                    transparent 35%
+                ),
+                #020617;
+
+            color: #ffffff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+
+            background: rgba(15, 23, 42, 0.88);
+
+            border: 1px solid rgba(255, 255, 255, 0.1);
+
+            border-radius: 18px;
+
+            padding: 35px;
+
+            box-shadow:
+                0 25px 60px rgba(0, 0, 0, 0.45);
+
+            backdrop-filter: blur(12px);
+        }
+
+        .logo {
+            text-align: center;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            color: #a78bfa;
+
+            margin-bottom: 8px;
+        }
+
+        .title {
+            text-align: center;
+
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+
+            color: #94a3b8;
+
+            font-size: 14px;
+
+            line-height: 1.5;
+
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+
+            margin-bottom: 8px;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            color: #cbd5e1;
+        }
+
+        input {
+            width: 100%;
+
+            padding: 12px 14px;
+
+            background: #020617;
+
+            border: 1px solid #334155;
+
+            border-radius: 9px;
+
+            color: #ffffff;
+
+            font-size: 15px;
+
+            outline: none;
+
+            transition:
+                border-color 0.2s,
+                box-shadow 0.2s;
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        input:focus {
+            border-color: #8b5cf6;
+
+            box-shadow:
+                0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        button {
+            width: 100%;
+
+            padding: 13px;
+
+            margin-top: 5px;
+
+            border: none;
+
+            border-radius: 9px;
+
+            background: linear-gradient(
+                135deg,
+                #7c3aed,
+                #8b5cf6
+            );
+
+            color: #ffffff;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.2s,
+                opacity 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+
+            opacity: 0.92;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+
+            cursor: not-allowed;
+
+            transform: none;
+        }
+
+        #message {
+            display: none;
+
+            margin-top: 18px;
+
+            padding: 12px 14px;
+
+            border-radius: 8px;
+
+            font-size: 14px;
+
+            line-height: 1.4;
+        }
+
+        #message.success {
+            display: block;
+
+            color: #86efac;
+
+            background: rgba(34, 197, 94, 0.12);
+
+            border: 1px solid rgba(34, 197, 94, 0.35);
+        }
+
+        #message.error {
+            display: block;
+
+            color: #fca5a5;
+
+            background: rgba(239, 68, 68, 0.12);
+
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+
+        #message.loading {
+            display: block;
+
+            color: #c4b5fd;
+
+            background: rgba(139, 92, 246, 0.12);
+
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .back-link {
+            display: block;
+
+            margin-top: 22px;
+
+            text-align: center;
+
+            color: #94a3b8;
+
+            text-decoration: none;
+
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #c4b5fd;
+        }
+
+        .security-note {
+            margin-top: 25px;
+
+            padding: 12px 14px;
+
+            border-radius: 8px;
+
+            background: rgba(30, 41, 59, 0.7);
+
+            border: 1px solid rgba(255, 255, 255, 0.06);
+
+            color: #94a3b8;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+
+            text-align: center;
+        }
+
+        @media (max-width: 550px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 25px 20px;
+            }
+
+            .title {
+                font-size: 21px;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div class="container">
+
+        <div class="logo">
+            QueryAI
+        </div>
+
+        <h1 class="title">
+            Connect Your Database
+        </h1>
+
+        <p class="subtitle">
+            Connect your MongoDB database to let QueryAI
+            work with your data using natural language.
+        </p>
+
+
+        <form id="dbForm">
+
+            <!-- MongoDB URI -->
+
+            <div class="form-group">
+
+                <label for="uri">
+                    MongoDB Connection URI
+                </label>
+
+                <input
+                    type="text"
+                    id="uri"
+                    placeholder="mongodb+srv://username:password@cluster.mongodb.net/"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Database -->
+
+            <div class="form-group">
+
+                <label for="database">
+                    Database Name
+                </label>
+
+                <input
+                    type="text"
+                    id="database"
+                    placeholder="company_db"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                id="connectButton">
+
+                Connect Database
+
+            </button>
+
+        </form>
+
+
+        <p id="message"></p>
+
+
+        <div class="security-note">
+            Your MongoDB connection details are used only
+            to establish the database connection.
+        </div>
+
+
+        <a
+            href="/dashboard"
+            class="back-link">
+
+            ← Back to Dashboard
+
+        </a>
+
+    </div>
+
+
+    <script>
+
+        document
+            .getElementById("dbForm")
+            .addEventListener("submit", async (event) => {
+
+                event.preventDefault();
+
+
+                const message =
+                    document.getElementById("message");
+
+                const button =
+                    document.getElementById("connectButton");
+
+
+                const data = {
+
+                    uri:
+                        document.getElementById("uri").value.trim(),
+
+                    database:
+                        document.getElementById("database").value.trim()
+
+                };
+
+
+                /* Loading state */
+
+                message.className = "loading";
+
+                message.textContent =
+                    "Connecting to your MongoDB database...";
+
+                button.disabled = true;
+
+                button.textContent =
+                    "Connecting...";
+
+
+                try {
+
+                    const response =
+                        await fetch("/connect-db", {
+
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(data)
+
+                        });
+
+
+                    const result =
+                        await response.json();
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            result.message ||
+                            "Database connection failed"
+                        );
+
+                    }
+
+
+                    /* Success */
+
+                    message.className =
+                        "success";
+
+                    message.textContent =
+                        "MongoDB database connected successfully ✓";
+
+
+                    button.textContent =
+                        "Connected";
+
+
+                    /* Give user a moment to see success */
+
+                    setTimeout(() => {
+
+                        window.location.href =
+                            "/dashboard";
+
+                    }, 1000);
+
+
+                } catch (error) {
+
+                    /* Error */
+
+                    message.className =
+                        "error";
+
+                    message.textContent =
+                        error.message ||
+                        "Unable to connect to MongoDB.";
+
+
+                    button.disabled = false;
+
+                    button.textContent =
+                        "Connect Database";
+
+                }
+
+            });
+
+    </script>
+
+</body>
+
+</html>
