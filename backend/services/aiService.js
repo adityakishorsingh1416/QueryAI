@@ -3,16 +3,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-console.log(
-    "API KEY LOADED:",
-    !!process.env.OPENAI_API_KEY
-);
-
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     baseURL: "https://openrouter.ai/api/v1",
 });
-
 
 const generateQuery = async (userQuestion, schema) => {
 
@@ -43,7 +37,7 @@ RULES:
 11. Use sort only when the user asks for sorting.
 12. Do not invent collection names or fields.
 
-JSON FORMAT:
+Return JSON in exactly this format:
 
 {
     "collection": "collection_name",
@@ -55,20 +49,23 @@ JSON FORMAT:
 }
 `;
 
+    const response = await client.chat.completions.create({
+        model: "openai/gpt-4o-mini",
 
-    const response =
-        await client.responses.create({
-            model: "openai/gpt-4o-mini",
-            input: prompt,
-        });
+        messages: [
+            {
+                role: "user",
+                content: prompt
+            }
+        ],
 
+        temperature: 0
+    });
 
     let output =
-        response.output_text.trim();
+        response.choices[0].message.content.trim();
 
-
-    // Remove markdown code fences if the model
-    // accidentally returns them
+    // Remove markdown code fences if the AI adds them
     output = output.replace(
         /^```json\s*/i,
         ""
@@ -84,24 +81,20 @@ JSON FORMAT:
         ""
     );
 
-
     let query;
 
-
     try {
-
         query = JSON.parse(output);
-
     } catch (error) {
+        console.error(
+            "AI RESPONSE:",
+            output
+        );
 
         throw new Error(
             "AI returned an invalid MongoDB query"
         );
-
     }
-
-
-    // Basic validation
 
     if (
         !query.collection ||
@@ -112,18 +105,12 @@ JSON FORMAT:
         );
     }
 
-
-    // Always enforce a maximum limit
-
-    query.limit =
-        Math.min(
-            Number(query.limit) || 100,
-            100
-        );
-
+    query.limit = Math.min(
+        Number(query.limit) || 100,
+        100
+    );
 
     return query;
 };
-
 
 export default generateQuery;
