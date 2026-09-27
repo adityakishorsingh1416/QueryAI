@@ -3,13 +3,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-
-
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     baseURL: "https://openrouter.ai/api/v1",
 });
-
 
 const generateQuery = async (userQuestion, schema) => {
 
@@ -52,20 +49,24 @@ JSON FORMAT:
 }
 `;
 
-
     const response =
-        await client.responses.create({
+        await client.chat.completions.create({
             model: "openai/gpt-4o-mini",
-            input: prompt,
+
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+
+            temperature: 0
         });
 
-
     let output =
-        response.output_text.trim();
+        response.choices[0].message.content.trim();
 
-
-    // Remove markdown code fences if the model
-    // accidentally returns them
+    // Remove markdown code fences if AI adds them
     output = output.replace(
         /^```json\s*/i,
         ""
@@ -81,9 +82,7 @@ JSON FORMAT:
         ""
     );
 
-
     let query;
-
 
     try {
 
@@ -91,14 +90,15 @@ JSON FORMAT:
 
     } catch (error) {
 
+        console.error(
+            "INVALID AI RESPONSE:",
+            output
+        );
+
         throw new Error(
             "AI returned an invalid MongoDB query"
         );
-
     }
-
-
-    // Basic validation
 
     if (
         !query.collection ||
@@ -109,18 +109,13 @@ JSON FORMAT:
         );
     }
 
-
-    // Always enforce a maximum limit
-
     query.limit =
         Math.min(
             Number(query.limit) || 100,
             100
         );
 
-
     return query;
 };
-
 
 export default generateQuery;
