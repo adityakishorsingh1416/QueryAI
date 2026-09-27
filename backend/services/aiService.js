@@ -1,14 +1,16 @@
-import OpenAI from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: "https://openrouter.ai/api/v1",
-});
-
 const generateQuery = async (userQuestion, schema) => {
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+
+    if (!apiKey) {
+        throw new Error(
+            "OPENROUTER_API_KEY is missing"
+        );
+    }
 
     const prompt = `
 You are a MongoDB query generator.
@@ -37,7 +39,7 @@ RULES:
 11. Use sort only when the user asks for sorting.
 12. Do not invent collection names or fields.
 
-Return JSON in exactly this format:
+Return exactly this JSON structure:
 
 {
     "collection": "collection_name",
@@ -49,45 +51,66 @@ Return JSON in exactly this format:
 }
 `;
 
-    const response = await client.chat.completions.create({
-        model: "openai/gpt-4o-mini",
+    const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+            method: "POST",
 
-        messages: [
-            {
-                role: "user",
-                content: prompt
-            }
-        ],
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://queryai-4q50.onrender.com",
+                "X-Title": "QueryAI"
+            },
 
-        temperature: 0
-    });
+            body: JSON.stringify({
+                model: "openai/gpt-4o-mini",
+
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+
+                temperature: 0
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+
+        console.error(
+            "OPENROUTER ERROR:",
+            data
+        );
+
+        throw new Error(
+            data?.error?.message ||
+            "OpenRouter request failed"
+        );
+    }
 
     let output =
-        response.choices[0].message.content.trim();
+        data.choices[0].message.content.trim();
 
-    // Remove markdown code fences if the AI adds them
-    output = output.replace(
-        /^```json\s*/i,
-        ""
-    );
-
-    output = output.replace(
-        /^```\s*/i,
-        ""
-    );
-
-    output = output.replace(
-        /\s*```$/i,
-        ""
-    );
+    output = output
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/\s*```$/i, "");
 
     let query;
 
     try {
+
         query = JSON.parse(output);
+
     } catch (error) {
+
         console.error(
-            "AI RESPONSE:",
+            "INVALID AI RESPONSE:",
             output
         );
 
